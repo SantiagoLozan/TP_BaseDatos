@@ -63,42 +63,39 @@ public class SupabaseManager : MonoBehaviour
 
     public async void InsertarNuevoUsuario()
     {
-
         // Initialize the Supabase client
         clientSupabase = new Supabase.Client(supabaseUrl, supabaseKey);
 
-        // Consultar el �ltimo id utilizado (ID = index)
-        var ultimoId = await clientSupabase
+        // Consultar el ultimo id utilizado (ID = index)
+        var ultimoIdResponse = await clientSupabase
             .From<usuarios>()
             .Select("id")
-            .Order(usuarios => usuarios.id, Postgrest.Constants.Ordering.Descending) // Ordenar en orden descendente para obtener el �ltimo id
+            .Order(usuarios => usuarios.id, Postgrest.Constants.Ordering.Descending) // Ordenar en orden descendente para obtener el ultimo id
+            .Limit(1) // Limitar a un solo resultado
             .Get();
 
-        int nuevoId = 1; // Valor predeterminado si la tabla est� vac�a
+        int nuevoId = 1; // Valor predeterminado si la tabla esta vacia
 
-        if (ultimoId != null)
+        if (ultimoIdResponse.Models.Count > 0)
         {
-            nuevoId = ultimoId.Model.id + 1; // Incrementar el �ltimo id
+            var ultimoId = ultimoIdResponse.Models[0];
+            nuevoId = ultimoId.id + 1; // Incrementar el ultimo id
         }
 
         // Crear el nuevo usuario con el nuevo id
         var nuevoUsuario = new usuarios
         {
-
             id = nuevoId,
             username = _userIDInput.text,
-            age = Random.Range(0, 100), //luego creo el campo que falta en la UI
             password = _userPassInput.text,
         };
-
 
         // Insertar el nuevo usuario
         var resultado = await clientSupabase
             .From<usuarios>()
             .Insert(new[] { nuevoUsuario });
 
-
-        //verifico el estado de la inserci�n 
+        // Verificar el estado de la inserción 
         if (resultado.ResponseMessage.IsSuccessStatusCode)
         {
             _stateText.text = "Usuario Correctamente Ingresado";
@@ -107,10 +104,8 @@ public class SupabaseManager : MonoBehaviour
         else
         {
             _stateText.text = "Error en el registro de usuario";
-            _stateText.text = resultado.ResponseMessage.ToString();
-            _stateText.color = Color.green;
+            _stateText.text += resultado.ResponseMessage.ToString();
+            _stateText.color = Color.red;
         }
-
     }
 }
-
