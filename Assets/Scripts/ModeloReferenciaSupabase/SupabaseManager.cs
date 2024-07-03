@@ -6,6 +6,7 @@ using Postgrest.Models;
 using TMPro;
 using UnityEngine.UI;
 using System.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 public class SupabaseManager : MonoBehaviour
 
@@ -37,21 +38,19 @@ public class SupabaseManager : MonoBehaviour
             .Get();
         Debug.Log(test_response.Content);
 
-
-
-        // filtro seg�n datos de login
+        // filtro según datos de login
         var login_password = await clientSupabase
-          .From<usuarios>()
-          .Select("password")
-          .Where(usuarios => usuarios.username == _userIDInput.text)
-          .Get();
+            .From<usuarios>()
+            .Select("password")
+            .Where(usuarios => usuarios.username == _userIDInput.text)
+            .Get();
 
-
-        if (login_password.Model.password.Equals(_userPassInput.text))
+        if (login_password != null && login_password.Model.password.Equals(_userPassInput.text))
         {
             print("LOGIN SUCCESSFUL");
             _stateText.text = "LOGIN SUCCESSFUL";
             _stateText.color = Color.green;
+            CambiarEscena("TriviaSelectScene");
         }
         else
         {
@@ -107,5 +106,9 @@ public class SupabaseManager : MonoBehaviour
             _stateText.text += resultado.ResponseMessage.ToString();
             _stateText.color = Color.red;
         }
+    }
+    public void CambiarEscena(string name)
+    {
+        SceneManager.LoadScene(name);
     }
 }
