@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -50,6 +51,24 @@ public class GameManager : MonoBehaviour
         // Cargar la trivia desde la base de datos
         // triviaManager.LoadTrivia(currentTriviaIndex);
         // print(responseList.Count);
+    }
+
+    public void ResetTrivia()
+    {
+        indicePreguntaUsada.Clear();
+        currentTriviaIndex = 0;
+        randomQuestionIndex = 0;
+        _answers.Clear();
+        queryCalled = false;
+        _points = 0;
+        _numQuestionAnswered = 0;
+        _correctAnswer = string.Empty;
+    }
+
+    public void ReturnToCategorySelection()
+    {
+        ResetTrivia();
+        SceneManager.LoadScene("CategorySelectionScene");
     }
 
     public void CategoryAndQuestionQuery(bool isCalled)
@@ -152,3 +171,4 @@ public class GameManager : MonoBehaviour
     {
     }
 }
+
