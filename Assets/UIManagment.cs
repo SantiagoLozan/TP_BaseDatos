@@ -7,25 +7,15 @@ using UnityEngine.SceneManagement;
 
 public class UIManagment : MonoBehaviour
 {
-
-    
     [SerializeField] TextMeshProUGUI _categoryText;
-    [SerializeField] TextMeshProUGUI _questionText;
-    
-    string _correctAnswer;
+    [SerializeField] public TextMeshProUGUI _questionText;
 
     public Button[] _buttons = new Button[3];
-
     [SerializeField] Button _backButton;
-
-    private List<string> _answers = new List<string>();
 
     public bool queryCalled;
 
-    private Color _originalButtonColor;
-
     public static UIManagment Instance { get; private set; }
-
 
     void Awake()
     {
@@ -39,80 +29,42 @@ public class UIManagment : MonoBehaviour
         {
             Destroy(gameObject);
         }
-
     }
 
-
-    private void Start()
-    {
-        queryCalled = false;
-
-        _originalButtonColor = _buttons[0].GetComponent<Image>().color;
-
-    }
-
-    void Update()
+    private void Update()
     {
         _categoryText.text = PlayerPrefs.GetString("SelectedTrivia");
-        _questionText.text = GameManager.Instance.responseList[GameManager.Instance.randomQuestionIndex].QuestionText;
 
-        GameManager.Instance.CategoryAndQuestionQuery(queryCalled);
-
-    }
-    public void OnButtonClick(int buttonIndex)
-    {
-        
-        string selectedAnswer = _buttons[buttonIndex].GetComponentInChildren<TextMeshProUGUI>().text;
-
-        _correctAnswer = GameManager.Instance.responseList[GameManager.Instance.randomQuestionIndex].CorrectOption;
-
-        if (selectedAnswer == _correctAnswer)
+        // Verificaci√≥n de null antes de acceder a questionText
+        if (_questionText != null && GameManager.Instance != null)
         {
-            Debug.Log("°Respuesta correcta!");
-            ChangeButtonColor(buttonIndex, Color.green);
-            Invoke("RestoreButtonColor", 2f);
-            GameManager.Instance._answers.Clear();
-            Invoke("NextAnswer", 2f);
-            
+            GameManager.Instance.CategoryAndQuestionQuery(queryCalled);
         }
         else
         {
-            Debug.Log("Respuesta incorrecta. IntÈntalo de nuevo.");
-            
-            ChangeButtonColor(buttonIndex, Color.red);
-            Invoke("RestoreButtonColor", 2f);
+            Debug.LogWarning("questionText o GameManager no est√°n correctamente asignados.");
         }
-
-
     }
 
-    private void ChangeButtonColor(int buttonIndex, Color color)
+    public void OnButtonClick(int buttonIndex)
     {
-        Image buttonImage = _buttons[buttonIndex].GetComponent<Image>();
-        buttonImage.color = color;
-    }
+        string selectedAnswer = _buttons[buttonIndex].GetComponentInChildren<TextMeshProUGUI>().text;
 
-    private void RestoreButtonColor()
-    {
-        foreach (Button button in _buttons)
+        if (selectedAnswer == GameManager.Instance._correctAnswer)
         {
-            Image buttonImage = button.GetComponent<Image>();
-            buttonImage.color = _originalButtonColor;
+            Debug.Log("Respuesta correcta!");
         }
-    }
-
-    private void NextAnswer()
-    {
-        queryCalled = false;
+        else
+        {
+            Debug.Log("Respuesta incorrecta. Int√©ntalo de nuevo.");
+        }
     }
 
     public void PreviousScene()
     {
-        Destroy(GameManager.Instance);
-        Destroy(UIManagment.Instance);
+        Destroy(GameManager.Instance.gameObject);
+        Destroy(UIManagment.Instance.gameObject);
 
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
     }
-
-
 }

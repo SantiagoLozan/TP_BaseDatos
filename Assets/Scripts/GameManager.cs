@@ -1,74 +1,41 @@
+using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
-    public List<question> responseList; // Lista donde guardo la respuesta de la query hecha en la pantalla de selección de categoría
+    public static GameManager Instance { get; private set; }
 
-    private List<int> indicePreguntaUsada = new List<int>();
+    public List<question> responseList = new List<question>();
+    public List<int> indicePreguntaUsada = new List<int>();
 
-    public int currentTriviaIndex = 0;
-    public int randomQuestionIndex = 0;
-
+    public int randomQuestionIndex;
     public List<string> _answers = new List<string>();
 
-    public bool queryCalled;
-
-    public int _points;
-
-    private int _maxAttempts = 10;
-
-    public int _numQuestionAnswered = 0;
-
-    string _correctAnswer;
-
-    public static GameManager Instance { get; private set; }
+    public string _correctAnswer;
+    public int currentTriviaIndex { get; set; }
+    private Dictionary<string, int> categoryToTriviaId = new Dictionary<string, int>()
+    {
+        { "Historia", 1 },
+        { "Ciencia", 2 },
+        { "Arte", 3 },
+        { "Geografia", 4 }
+    };
 
     void Awake()
     {
-        // Configura la instancia
+        // Singleton
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Para mantener el objeto entre escenas
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
             Destroy(gameObject);
         }
-    }
-
-    void Start()
-    {
-        StartTrivia();
-        queryCalled = false;
-    }
-
-    void StartTrivia()
-    {
-        // Cargar la trivia desde la base de datos
-        // triviaManager.LoadTrivia(currentTriviaIndex);
-        // print(responseList.Count);
-    }
-
-    public void ResetTrivia()
-    {
-        indicePreguntaUsada.Clear();
-        currentTriviaIndex = 0;
-        randomQuestionIndex = 0;
-        _answers.Clear();
-        queryCalled = false;
-        _points = 0;
-        _numQuestionAnswered = 0;
-        _correctAnswer = string.Empty;
-    }
-
-    public void ReturnToCategorySelection()
-    {
-        ResetTrivia();
-        SceneManager.LoadScene("CategorySelectionScene");
     }
 
     public void CategoryAndQuestionQuery(bool isCalled)
@@ -77,39 +44,57 @@ public class GameManager : MonoBehaviour
 
         if (!isCalled)
         {
-            // Limpiar las respuestas y los listeners antes de asignar nuevas respuestas
+            // Limpiar datos anteriores de la UI
             ClearPreviousAnswers();
+            UIManagment.Instance._questionText.text = string.Empty;
 
             Debug.Log("Iniciando trivia con " + responseList.Count + " preguntas.");
 
-            if (responseList.Count > 0)
+            if (responseList.Count == 0)
             {
-                Debug.Log("Primera pregunta: " + responseList[0].QuestionText);
-            }
-            else
-            {
-                Debug.LogError("responseList está vacío. Verifica la inicialización de responseList.");
+                Debug.LogError("responseList está vacío. Verifica la carga de preguntas.");
+                return;
             }
 
-            // Si se han mostrado todas las preguntas, reiniciar el registro de índices
-            if (indicePreguntaUsada.Count >= responseList.Count)
+            // Obtener el nombre de la categoría seleccionada
+            string selectedCategory = PlayerPrefs.GetString("SelectedTrivia");
+
+            // Mapear la categoría a trivia_id
+            if (!categoryToTriviaId.TryGetValue(selectedCategory, out int selectedTriviaId))
+            {
+                Debug.LogError("Categoría no válida: " + selectedCategory);
+                return;
+            }
+
+            // Filtrar preguntas por trivia_id
+            List<question> filteredQuestions = responseList.FindAll(q => q.trivia_id == selectedTriviaId);
+
+            if (filteredQuestions.Count == 0)
+            {
+                Debug.LogError("No se encontraron preguntas para el trivia_id seleccionado: " + selectedTriviaId);
+                return;
+            }
+
+            // Si se han mostrado todas las preguntas, reinicia la lista de índices usados
+            if (indicePreguntaUsada.Count >= filteredQuestions.Count)
             {
                 indicePreguntaUsada.Clear();
             }
 
-            // Obtener un índice aleatorio que no se haya utilizado
+            // Obtener un índice aleatorio que no se haya usado
             do
             {
-                randomQuestionIndex = Random.Range(0, responseList.Count);
+                randomQuestionIndex = Random.Range(0, filteredQuestions.Count);
             } while (indicePreguntaUsada.Contains(randomQuestionIndex));
 
-            // Agregar el índice a la lista de utilizados
+            // Registrar el índice como usado
             indicePreguntaUsada.Add(randomQuestionIndex);
 
-            // Obtener la pregunta y las respuestas
-            var selectedQuestion = GameManager.Instance.responseList[randomQuestionIndex];
+            // Obtener la pregunta seleccionada
+            var selectedQuestion = filteredQuestions[randomQuestionIndex];
             _correctAnswer = selectedQuestion.CorrectOption;
 
+            // Cargar respuestas
             _answers.Add(selectedQuestion.Answer1);
             _answers.Add(selectedQuestion.Answer2);
             _answers.Add(selectedQuestion.Answer3);
@@ -117,18 +102,19 @@ public class GameManager : MonoBehaviour
             // Mezclar las respuestas
             _answers.Shuffle();
 
-            // Mensajes de depuración para verificar las respuestas
-            Debug.Log("Pregunta: " + selectedQuestion.QuestionText);
-            Debug.Log("Respuestas mezcladas: " + string.Join(", ", _answers));
+            // Actualizar la UI con la pregunta
+            UIManagment.Instance._questionText.text = selectedQuestion.QuestionText;
+            Debug.Log("Pregunta mostrada: " + selectedQuestion.QuestionText);
 
-            // Asignar las respuestas a los botones, asegurando que no se accede a índices fuera de rango
+            // Mostrar las respuestas en los botones
             for (int i = 0; i < UIManagment.Instance._buttons.Length; i++)
             {
-                if (i < _answers.Count) // Asegurar que hay suficientes respuestas
+                if (i < _answers.Count) // Verificar que haya suficientes respuestas
                 {
                     UIManagment.Instance._buttons[i].GetComponentInChildren<TextMeshProUGUI>().text = _answers[i];
 
-                    int index = i; // Captura el valor actual de i en una variable local -- SINO NO FUNCA!
+                    // Capturar el índice para el botón
+                    int index = i;
                     UIManagment.Instance._buttons[i].onClick.AddListener(() => UIManagment.Instance.OnButtonClick(index));
                 }
                 else
@@ -139,36 +125,17 @@ public class GameManager : MonoBehaviour
                 }
             }
 
+            Debug.Log("Respuestas mostradas: " + string.Join(", ", _answers));
             UIManagment.Instance.queryCalled = true;
         }
     }
 
-    private int GetUniqueRandomQuestionIndex()
-    {
-        int index;
-        do
-        {
-            index = Random.Range(0, GameManager.Instance.responseList.Count);
-        } while (indicePreguntaUsada.Contains(index));
-
-        return index;
-    }
-
     private void ClearPreviousAnswers()
     {
-        // Limpiar la lista de respuestas
         _answers.Clear();
-
-        // Limpiar el texto y los listeners de los botones
-        foreach (var button in UIManagment.Instance._buttons)
+        foreach (Button button in UIManagment.Instance._buttons)
         {
-            button.GetComponentInChildren<TextMeshProUGUI>().text = string.Empty;
             button.onClick.RemoveAllListeners();
         }
     }
-
-    private void Update()
-    {
-    }
 }
-

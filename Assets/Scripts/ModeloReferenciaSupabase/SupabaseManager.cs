@@ -17,8 +17,8 @@ public class SupabaseManager : MonoBehaviour
     [SerializeField] TMP_InputField _userPassInput;
     [SerializeField] TextMeshProUGUI _stateText;
 
-    string supabaseUrl = "https://sluwyusxjyskvgprkyov.supabase.co"; //COMPLETAR
-    string supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsdXd5dXN4anlza3ZncHJreW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTg4Mjk1MzgsImV4cCI6MjAzNDQwNTUzOH0.19GZ2W5UfdXK0IKAp5twfepNI06wZ_yyToTd_tmAQCk"; //COMPLETAR
+    string supabaseUrl = "https://mtaklkgetzskroigdppr.supabase.co"; //COMPLETAR
+    string supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWtsa2dldHpza3JvaWdkcHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMxMTYwNDIsImV4cCI6MjA0ODY5MjA0Mn0.x_tOH1ZWPj8BJcxXj4wHOTKAo7JbNzDxZWLpQoWd_4c"; //COMPLETAR
 
 
     Supabase.Client clientSupabase;
